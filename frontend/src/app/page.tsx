@@ -2,19 +2,17 @@ import HomeComponent from "@/components/Home";
 import Layout from "@/components/Layout";
 import ApiResponse from "@/models/ApiResponse";
 import Status from "@/models/status";
-import Head from "next/head";
-import { cookies } from "next/headers";
+import validAuthentication from "@/utils/validAuthentication";
 import { redirect } from "next/navigation";
 
 export default async function Page() {
-  const useCookies = cookies();
-  const token = useCookies.get("knowledge-token");
-  if (!token || !token.value) redirect("/auth/signIn");
+  const token = validAuthentication();
+  if (!token) redirect("/auth/signIn");
 
   const statusResponse = await fetch(
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/status`,
     {
-      cache: "no-cache",
+      cache: "no-store",
     },
   );
   const status: ApiResponse<Status> = await statusResponse.json();

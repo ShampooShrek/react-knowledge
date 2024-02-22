@@ -23,19 +23,15 @@ const getArticles = async (req: Request, res: Response) => {
       content: article.content.toString(),
     }));
 
-    return res
-      .status(200)
-      .json({
-        type: "success",
-        response: { data: articles, count: articleCount, limit },
-      });
+    return res.status(200).json({
+      type: "success",
+      response: { data: articles, count: articleCount, limit },
+    });
   } catch (err: any) {
-    return res
-      .status(500)
-      .json({
-        type: "error",
-        response: "Ops, algo deu errado, tente novamente mais tarde!",
-      });
+    return res.status(500).json({
+      type: "error",
+      response: "Ops, algo deu errado, tente novamente mais tarde!",
+    });
   } finally {
     await prisma.$disconnect();
   }
@@ -49,7 +45,6 @@ const getArticle = async (req: Request, res: Response) => {
       where: { id },
       include: {
         user: { select: { name: true, email: true } },
-        category: true,
       },
     });
 
@@ -63,29 +58,13 @@ const getArticle = async (req: Request, res: Response) => {
       response: { ...article, content: article.content.toString() },
     });
   } catch (err: any) {
-    return res
-      .status(500)
-      .json({
-        type: "error",
-        response: "Ops, algo deu errado, tente novamente mais tarde!",
-      });
+    return res.status(500).json({
+      type: "error",
+      response: "Ops, algo deu errado, tente novamente mais tarde!",
+    });
   } finally {
     await prisma.$disconnect();
   }
-};
-
-const findSubcategories = async (parentIdCategory: number) => {
-  const categories = await prisma.categories.findMany({
-    where: { parentId: parentIdCategory },
-  });
-  let subcategories = categories;
-
-  categories.forEach(async (cat) => {
-    const children = await findSubcategories(cat.id);
-    subcategories = [...subcategories, ...children];
-  });
-
-  return subcategories;
 };
 
 const getArticleByCategory = async (req: Request, res: Response) => {
@@ -103,17 +82,27 @@ const getArticleByCategory = async (req: Request, res: Response) => {
         .status(400)
         .json({ type: "error", response: "Categoria não encontrada!" });
 
-    const subCategories = await findSubcategories(categoryExists.id);
-    subCategories.push(categoryExists);
-    const ids = subCategories.map((c) => c.id);
+    const subcategories: { id: number }[] = await prisma.$queryRaw`
+      WITH RECURSIVE subcategories (id) as (
+        select id from "Categories" where id = ${categoryId}
+        UNION ALL
+          select c.id from subcategories s join "Categories" c on c."parentId" = s.id
+      )
+      select id from subcategories
+    `;
+
+    const ids = subcategories.map((c) => c.id);
 
     const articles = await prisma.articles.findMany({
       where: { categoryId: { in: ids } },
       take: limit,
       skip: page * limit - limit,
-      include: {
-        user: { select: { name: true, email: true } },
-        category: true,
+      select: {
+        name: true,
+        id: true,
+        description: true,
+        imageUrl: true,
+        user: { select: { name: true, email: true, id: true } },
       },
       orderBy: { id: "desc" },
     });
@@ -123,12 +112,10 @@ const getArticleByCategory = async (req: Request, res: Response) => {
       response: articles,
     });
   } catch (err: any) {
-    return res
-      .status(400)
-      .json({
-        type: "error",
-        response: "Ops, algo deu errado, tente novamente mais tarde!",
-      });
+    return res.status(400).json({
+      type: "error",
+      response: "Ops, algo deu errado, tente novamente mais tarde!",
+    });
   } finally {
     await prisma.$disconnect();
   }
@@ -184,20 +171,16 @@ const postArticle = async (req: Request, res: Response) => {
       },
     });
 
-    return res
-      .status(200)
-      .json({
-        type: "success",
-        response: { ...article, content: article.content.toString() },
-      });
+    return res.status(200).json({
+      type: "success",
+      response: { ...article, content: article.content.toString() },
+    });
   } catch (err: any) {
     console.log(err);
-    return res
-      .status(500)
-      .json({
-        type: "error",
-        response: "Ops, algo deu errado, tente novamente mais tarde!",
-      });
+    return res.status(500).json({
+      type: "error",
+      response: "Ops, algo deu errado, tente novamente mais tarde!",
+    });
   } finally {
     await prisma.$disconnect();
   }
@@ -232,20 +215,16 @@ const updateArticle = async (req: Request, res: Response) => {
       data: { name, description, imageUrl, content: contentBuffer },
     });
 
-    return res
-      .status(200)
-      .json({
-        type: "success",
-        response: { ...article, content: article.content.toString() },
-      });
+    return res.status(200).json({
+      type: "success",
+      response: { ...article, content: article.content.toString() },
+    });
   } catch (err: any) {
     console.log(err);
-    return res
-      .status(500)
-      .json({
-        type: "error",
-        response: "Ops, algo deu errado, tente novamente mais tarde!",
-      });
+    return res.status(500).json({
+      type: "error",
+      response: "Ops, algo deu errado, tente novamente mais tarde!",
+    });
   } finally {
     await prisma.$disconnect();
   }
@@ -266,12 +245,10 @@ const removeArticle = async (req: Request, res: Response) => {
       .status(200)
       .json({ type: "success", response: "Artigo deletado com sucesso!" });
   } catch (err: any) {
-    return res
-      .status(500)
-      .json({
-        type: "error",
-        response: "Ops, algo deu errado, tente novamente mais tarde!",
-      });
+    return res.status(500).json({
+      type: "error",
+      response: "Ops, algo deu errado, tente novamente mais tarde!",
+    });
   } finally {
     await prisma.$disconnect();
   }

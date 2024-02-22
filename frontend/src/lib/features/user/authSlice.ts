@@ -1,17 +1,17 @@
 import User, { UserLogin } from "@/models/user";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { setCookie, destroyCookie, parseCookies } from "nookies";
 import axios from "axios";
+import { setCookie, deleteCookie } from "cookies-next";
 
 interface InitialStateType {
-  isMenuVisible: boolean
-  user: User | null
+  isMenuVisible: boolean;
+  user: User | null;
 }
 
 const initialState: InitialStateType = {
   isMenuVisible: false,
-  user: null
-}
+  user: null,
+};
 
 const authSlice = createSlice({
   name: "auth",
@@ -19,38 +19,35 @@ const authSlice = createSlice({
   reducers: {
     toggleMenu: (state, action: PayloadAction<boolean>) => {
       if (!state.user) {
-        state.isMenuVisible = false
-        return
+        state.isMenuVisible = false;
+        return;
       }
 
       if (state.isMenuVisible === undefined) {
-        state.isMenuVisible = !state.isMenuVisible
+        state.isMenuVisible = !state.isMenuVisible;
       } else {
-        state.isMenuVisible = action.payload
+        state.isMenuVisible = action.payload;
       }
     },
     setUser: (state, action: PayloadAction<UserLogin | null>) => {
-      state.user = action.payload
+      state.user = action.payload;
       if (action.payload) {
         if (action.payload.token) {
-          axios.defaults.headers.common.Authorization = `Bearer ${action.payload.token}`
-          setCookie(null, "knowledge-token", action.payload.token, {
+          axios.defaults.headers.common.Authorization = `Bearer ${action.payload.token}`;
+          setCookie("knowledge-token", action.payload.token, {
             maxAge: 60 * 60 * 24 * 7,
-            path: "/"
-          })
+            path: "/",
+          });
         }
       } else {
-        delete axios.defaults.headers.common.Authorizatio
-        destroyCookie(null, "knowledge-token")
-        state.isMenuVisible = false
-        window.location.replace("/auth/signIn")
+        delete axios.defaults.headers.common.Authorizatio;
+        deleteCookie("knowledge-token");
+        state.isMenuVisible = false;
+        window.location.replace("/auth/signIn");
       }
     },
   },
+});
 
-})
-
-export const { toggleMenu, setUser } = authSlice.actions
-export default authSlice.reducer
-
-
+export const { toggleMenu, setUser } = authSlice.actions;
+export default authSlice.reducer;

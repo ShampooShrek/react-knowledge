@@ -2,6 +2,7 @@ import Article from "@/components/Article";
 import Layout from "@/components/Layout";
 import ApiResponse from "@/models/ApiResponse";
 import Articles from "@/models/articles";
+import validAuthentication from "@/utils/validAuthentication";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -16,6 +17,9 @@ interface ArticlesPageProps {
 export default async function ArticlesPage({
   params: { id },
 }: ArticlesPageProps) {
+  const token = validAuthentication();
+  if (!token) redirect("/auth/signIn");
+
   const articleResponse = await fetch(
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/articles/${id}`,
     {

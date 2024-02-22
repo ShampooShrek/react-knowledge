@@ -1,18 +1,27 @@
-import express from "express"
-import cors from "cors"
+const origin =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : process.env.ORIGIN || "http://localhost:3000";
 
-import categoriesRoute from "./routes/categories"
-import articlesRoute from "./routes/articles"
-import usersRoute from "./routes/users"
-import statusRoute from "./routes/status"
+import express from "express";
+import cors from "cors";
 
-export const app = express()
+import categoriesRoute from "./routes/categories";
+import articlesRoute from "./routes/articles";
+import usersRoute from "./routes/users";
+import statusRoute from "./routes/status";
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(cors())
+export const app = express();
 
-app.use(categoriesRoute, articlesRoute, usersRoute, statusRoute)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    optionsSuccessStatus: 200,
+    origin,
+  }),
+);
 
-app.get("/", (req, res) => res.send({ status: "success", response: "OK!!" }))
+console.log(process.env.NODE_ENV);
 
+app.use(categoriesRoute, articlesRoute, usersRoute, statusRoute);
